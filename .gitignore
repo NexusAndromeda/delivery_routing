@@ -1,0 +1,122 @@
+# Rust
+**/target/
+**/*.rs.bk
+**/Cargo.lock
+
+# Environment files
+**/.env
+**/.env.local
+**/.env.production
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Build artifacts
+**/dist/
+**/build/
+**/out/
+
+# Dependencies
+**/node_modules/
+**/vendor/
+
+# Temporary files
+*.tmp
+*.temp
+*.cache
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Testing
+**/coverage/
+**/.coverage
+**/htmlcov/
+
+# Documentation build
+**/docs/_build/
+**/docs/.doctrees/
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Compiled binaries
+**/*.exe
+**/*.dll
+**/*.so
+**/*.dylib
+
+# Rust specific
+**/target/
+**/*.rs.bk
+**/Cargo.lock
+**/debug/
+**/release/
+**/incremental/
+
+# Android specific
+android/**/.gradle/
+android/**/build/
+android/**/local.properties
+android/**/.idea/
+android/**/*.iml
+android/**/captures/
+android/**/.externalNativeBuild/
+android/**/.cxx/
+android/**/app/release/
+android/**/app/debug/
+android/**/app/build/
+android/**/app/*.apk
+android/**/app/*.aab
+
+# Reverse engineering artifacts (muy pesados)
+android/**/colis_prive_decompiled/
+android/**/colis_prive_apktool/
+android/**/*.apk
+
+# 🆕 NUEVO: Carpeta de análisis del APK (excluir completamente)
+apk_analysis/
+apk_analysis/**/*
+!apk_analysis/.gitkeep
+
+# Gradle specific
+android/**/.gradle/
+android/**/gradle-app.setting
+android/**/!gradle-wrapper.jar
+android/**/gradlew
+android/**/gradlew.bat
+
+# Gradle checksums y archivos temporales
+android/**/.gradle/*/checksums/
+android/**/.gradle/*/checksums/*.bin
+android/**/.gradle/*/checksums/*.lock
+android/**/app/build.gradle.kts
+android/**/gradle.properties
+android/**/gradle/wrapper/gradle-wrapper.properties
+
+# Android Studio
+android/**/.idea/
+android/**/*.iml
+android/**/local.properties
+android/**/.gradle/
+android/**/build/
+android/**/captures/
+android/**/.externalNativeBuild/
+android/**/.cxx/
+
