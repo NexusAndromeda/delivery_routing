@@ -2,12 +2,14 @@ package com.daniel.deliveryrouting.data.repository
 
 import android.content.Context
 import android.util.Log
+import com.daniel.deliveryrouting.BuildConfig
 import com.daniel.deliveryrouting.data.api.BackendApi
 import com.daniel.deliveryrouting.data.api.models.LoginRequest
 import com.daniel.deliveryrouting.data.api.models.LoginResponse
 import com.daniel.deliveryrouting.data.api.models.GetPackagesRequest
 import com.daniel.deliveryrouting.data.api.models.GetPackagesResponse
 import com.daniel.deliveryrouting.data.api.models.PackageData
+import com.daniel.deliveryrouting.data.api.models.CompanyListResponse
 import com.daniel.deliveryrouting.data.demo.DemoData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -22,8 +24,17 @@ class BackendRepository(private val context: Context) {
     private val TAG = "BackendRepository"
 
     private val api: BackendApi by lazy {
+        Log.d(TAG, "🔧 Configurando API con:")
+        Log.d(TAG, "   Base URL: ${BuildConfig.BASE_URL}")
+        Log.d(TAG, "   Environment: ${BuildConfig.ENVIRONMENT}")
+        Log.d(TAG, "   Enable Logging: ${BuildConfig.ENABLE_LOGGING}")
+        
         val logging = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            level = if (BuildConfig.ENABLE_LOGGING) {
+                HttpLoggingInterceptor.Level.BODY
+            } else {
+                HttpLoggingInterceptor.Level.NONE
+            }
         }
 
         val client = OkHttpClient.Builder()
@@ -34,7 +45,7 @@ class BackendRepository(private val context: Context) {
             .build()
 
         Retrofit.Builder()
-            .baseUrl("http://192.168.1.9:3000/")
+            .baseUrl(BuildConfig.BASE_URL + "/")
             .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
@@ -132,6 +143,27 @@ class BackendRepository(private val context: Context) {
                 error = null
             )
             Result.success(demoResponse)
+        }
+    }
+    
+    suspend fun getCompanies(): Result<CompanyListResponse> = withContext(Dispatchers.IO) {
+        try {
+            Log.d(TAG, "🏢 Obteniendo lista de empresas")
+            
+            val response = api.getCompanies()
+            
+            if (response.isSuccessful && response.body() != null) {
+                val companies = response.body()!!
+                Log.d(TAG, "🎉 Empresas obtenidas exitosamente: ${companies.companies.size} empresas")
+                Result.success(companies)
+            } else {
+                val errorBody = response.errorBody()?.string() ?: "Error desconocido"
+                Log.e(TAG, "❌ Error obteniendo empresas: ${response.code()} - $errorBody")
+                Result.failure(Exception("Error ${response.code()}: $errorBody"))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Excepción obteniendo empresas: ${e.message}", e)
+            Result.failure(e)
         }
     }
 }

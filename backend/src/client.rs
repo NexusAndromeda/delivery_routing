@@ -113,17 +113,21 @@ impl Default for DetailCacheConfig {
 }
 
 impl ColisPriveWebClient {
-    /// Crear nuevo cliente HTTP para API web
-    pub fn new() -> Result<Self> {
+    /// Crear nuevo cliente HTTP para API web con URLs configurables
+    pub fn new(
+        auth_base_url: String,
+        tournee_base_url: String,
+        detail_base_url: String,
+    ) -> Result<Self> {
         let client = Client::builder()
             .timeout(std::time::Duration::from_secs(30))
             .build()?;
 
         Ok(Self {
             client,
-            auth_base_url: "https://wsauthentificationexterne.colisprive.com".to_string(),
-            tournee_base_url: "https://wstournee-v2.colisprive.com".to_string(),
-            detail_base_url: "https://wstournee-v2.colisprive.com".to_string(),
+            auth_base_url,
+            tournee_base_url,
+            detail_base_url,
         })
     }
 

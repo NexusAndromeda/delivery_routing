@@ -12,7 +12,10 @@ use serde_json::json;
 use log;
 use crate::{
     state::AppState,
+    config::environment::EnvironmentConfig,
     services::colis_prive_service::{ColisPriveAuthRequest, GetTourneeRequest, GetPackagesRequest, ColisPriveAuthResponse},
+    services::colis_prive_companies_service::ColisPriveCompaniesService,
+    models::colis_prive_company::ColisPriveCompanyListResponse,
 };
 
 /// POST /api/colis-prive/auth - Autenticar con Colis Privé
@@ -25,7 +28,7 @@ pub async fn authenticate_colis_prive(
     let societe = credentials.societe.clone();
     
     // 🔧 IMPLEMENTACIÓN REAL: Autenticación directa con Colis Privé
-    match authenticate_colis_prive_simple(&credentials).await {
+    match authenticate_colis_prive_simple(&credentials, &state.config).await {
         Ok(auth_response) => {
             if auth_response.success {
                 // 🆕 ALMACENAR EL TOKEN EN EL ESTADO DE LA APLICACIÓN
@@ -91,7 +94,8 @@ pub async fn authenticate_colis_prive(
 
 /// 🔧 FUNCIÓN AUXILIAR: Autenticación simple sin device_info
 async fn authenticate_colis_prive_simple(
-    credentials: &ColisPriveAuthRequest
+    credentials: &ColisPriveAuthRequest,
+    config: &EnvironmentConfig,
 ) -> Result<ColisPriveAuthResponse, anyhow::Error> {
     log::info!("🔐 Autenticando con Colis Privé (modo real)");
     
@@ -101,7 +105,7 @@ async fn authenticate_colis_prive_simple(
     }
     
     // 🔧 IMPLEMENTACIÓN REAL: Autenticación directa con Colis Privé
-    let auth_url = "https://wsauthentificationexterne.colisprive.com/api/auth/login/Membership";
+    let auth_url = format!("{}/api/auth/login/Membership", config.colis_prive_auth_url);
     let login_field = format!("{}_{}", credentials.societe, credentials.username);
     let auth_payload = json!({
         "login": login_field,
@@ -269,7 +273,7 @@ pub async fn get_packages(
     });
 
     let payload_str = serde_json::to_string(&payload).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    let tournee_url = "https://wstournee-v2.colisprive.com/WS-TourneeColis/api/getTourneeByMatriculeDistributeurDateDebut_POST";
+    let tournee_url = format!("{}/WS-TourneeColis/api/getTourneeByMatriculeDistributeurDateDebut_POST", state.config.colis_prive_tournee_url);
     
     log::info!("📤 Llamando a: {}", tournee_url);
     log::info!("📦 Payload: {}", payload_str);
@@ -474,7 +478,7 @@ pub async fn get_tournee_data(
     };
 
     // 🆕 PASO 2: Hacer petición REAL a Colis Privé para obtener tournée
-    let tournee_url = "https://wstournee-v2.colisprive.com/WS-TourneeColis/api/getTourneeByMatriculeDistributeurDateDebut_POST";
+    let tournee_url = format!("{}/WS-TourneeColis/api/getTourneeByMatriculeDistributeurDateDebut_POST", state.config.colis_prive_tournee_url);
 
     // 🆕 PAYLOAD YA DEFINIDO ARRIBA
 
@@ -645,7 +649,7 @@ async fn attempt_auto_auth(
     };
     
     // Intentar autenticación
-    match authenticate_colis_prive_simple(&credentials).await {
+    match authenticate_colis_prive_simple(&credentials, &state.config).await {
         Ok(auth_response) => {
             if auth_response.success {
                 if let Some(token) = auth_response.token {
@@ -669,6 +673,47 @@ async fn attempt_auto_auth(
         Err(e) => {
             log::error!("❌ Error en autenticación automática: {}", e);
             Err(e)
+        }
+    }
+}
+
+/// GET /api/colis-prive/companies - Obtener lista de empresas disponibles
+pub async fn get_companies(State(state): State<AppState>) -> Result<Json<ColisPriveCompanyListResponse>, StatusCode> {
+    log::info!("🏢 Obteniendo lista de empresas disponibles desde Colis Privé");
+    
+    // Crear el servicio con la URL base de Colis Privé (API real)
+    let service = ColisPriveCompaniesService::new(state.config.colis_prive_referentiel_url.clone());
+    
+    match service.get_companies().await {
+        Ok(companies) => {
+            log::info!("✅ Empresas obtenidas desde Colis Privé: {} empresas", companies.len());
+            
+            // Mapear a nuestro formato de respuesta
+            let mapped_companies: Vec<crate::models::colis_prive_company::ColisPriveCompany> = companies
+                .into_iter()
+                .map(|cp| crate::models::colis_prive_company::ColisPriveCompany {
+                    code: cp.code,
+                    name: cp.libelle,
+                    description: None,
+                })
+                .collect();
+            
+            let response = ColisPriveCompanyListResponse {
+                success: true,
+                companies: mapped_companies,
+                message: Some("Empresas obtenidas desde Colis Privé".to_string()),
+            };
+            
+            Ok(Json(response))
+        }
+        Err(e) => {
+            log::error!("❌ Error obteniendo empresas desde Colis Privé: {}", e);
+            
+            // Fallback a datos de test si falla la llamada real
+            let response = ColisPriveCompanyListResponse::default();
+            log::warn!("⚠️ Usando datos de test como fallback");
+            
+            Ok(Json(response))
         }
     }
 }

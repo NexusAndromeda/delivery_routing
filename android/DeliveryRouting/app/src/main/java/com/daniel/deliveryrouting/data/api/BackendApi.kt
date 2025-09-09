@@ -9,6 +9,7 @@ import com.daniel.deliveryrouting.data.api.models.MobileTourneeResponse
 import com.daniel.deliveryrouting.data.api.models.UpdatePackageStatusRequest
 import com.daniel.deliveryrouting.data.api.models.UpdatePackageStatusResponse
 import com.daniel.deliveryrouting.data.api.models.MobileStatsResponse
+import com.daniel.deliveryrouting.data.api.models.CompanyListResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -78,4 +79,16 @@ interface BackendApi {
         "User-Agent: okhttp/3.4.1"
     )
     suspend fun getMobileStats(): Response<MobileStatsResponse>
+    
+    // ===== API EMPRESAS =====
+    
+    @GET("api/colis-prive/companies")
+    @Headers(
+        "Accept-Charset: UTF-8",
+        "Content-Type: application/json; charset=UTF-8",
+        "Connection: Keep-Alive",
+        "Accept-Encoding: gzip",
+        "User-Agent: okhttp/3.4.1"
+    )
+    suspend fun getCompanies(): Response<CompanyListResponse>
 }

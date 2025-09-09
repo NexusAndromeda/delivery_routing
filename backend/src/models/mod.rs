@@ -5,6 +5,7 @@
 
 pub mod auth;
 pub mod company;
+pub mod colis_prive_company;
 pub mod user;
 pub mod vehicle;
 pub mod tournee;

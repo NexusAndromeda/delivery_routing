@@ -70,6 +70,7 @@ async fn main() -> Result<()> {
     let app = Router::new()
         .route("/test", get(test_endpoint))
         .route("/api/colis-prive/health", get(api::colis_prive::health_check_colis_prive))
+        .route("/api/colis-prive/companies", get(api::colis_prive::get_companies))
         .route("/api/colis-prive/auth", post(api::colis_prive::authenticate_colis_prive))
         .route("/api/colis-prive/packages-test", get(api::colis_prive::test_packages_endpoint))
         .route("/api/colis-prive/packages", post(api::colis_prive::get_packages))
@@ -86,6 +87,7 @@ async fn main() -> Result<()> {
     info!("🔍 Endpoints disponibles:");
     info!("   GET  /test - Endpoint de prueba");
     info!("   GET  /api/colis-prive/health - Health check Colis Privé");
+    info!("   GET  /api/colis-prive/companies - Obtener empresas disponibles");
     info!("   POST /api/colis-prive/auth - Autenticación Colis Privé");
     info!("   GET  /api/colis-prive/packages-test - Test endpoint");
     info!("   POST /api/colis-prive/packages - Obtener paquetes");

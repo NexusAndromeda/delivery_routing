@@ -92,7 +92,7 @@ pub async fn process_packages_hybrid(
     };
     
     // Crear procesador híbrido
-    let processor = match HybridProcessor::new(cache_strategy) {
+    let processor = match HybridProcessor::new(cache_strategy, &_state.config) {
         Ok(p) => p,
         Err(e) => {
             warn!("Error creando procesador híbrido: {}", e);
@@ -142,7 +142,11 @@ pub async fn get_package_detail(
     info!("Obteniendo datos detallados para paquete: {}", request.ref_colis);
     
     // Crear cliente
-    let client = match crate::client::ColisPriveWebClient::new() {
+    let client = match crate::client::ColisPriveWebClient::new(
+        _state.config.colis_prive_auth_url.clone(),
+        _state.config.colis_prive_tournee_url.clone(),
+        _state.config.colis_prive_detail_url.clone(),
+    ) {
         Ok(c) => c,
         Err(e) => {
             warn!("Error creando cliente: {}", e);

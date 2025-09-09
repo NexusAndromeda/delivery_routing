@@ -5,6 +5,7 @@
 //! múltiples modelos o integraciones externas.
 
 pub mod colis_prive_service;
+pub mod colis_prive_companies_service;
 // app_version_service eliminado - era para reverse engineering de API móvil
 // pub mod colis_prive_flow_service; // Comentado temporalmente por errores de compilación
 // pub mod colis_prive_complete_flow_service; // Comentado temporalmente por errores de compilación

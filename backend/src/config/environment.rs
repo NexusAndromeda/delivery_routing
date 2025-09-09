@@ -16,6 +16,12 @@ pub struct EnvironmentConfig {
     pub rate_limit_requests: u32,
     pub rate_limit_window: u64,
     pub mapbox_token: Option<String>,
+    // URLs de Colis Privé
+    pub colis_prive_auth_url: String,
+    pub colis_prive_tournee_url: String,
+    pub colis_prive_detail_url: String,
+    pub colis_prive_gestion_url: String,
+    pub colis_prive_referentiel_url: String,
 }
 
 impl Default for EnvironmentConfig {
@@ -46,6 +52,17 @@ impl Default for EnvironmentConfig {
                 .parse()
                 .unwrap_or(3600),
             mapbox_token: env::var("MAPBOX_TOKEN").ok(),
+            // URLs de Colis Privé
+            colis_prive_auth_url: env::var("COLIS_PRIVE_AUTH_URL")
+                .unwrap_or_else(|_| "https://wsauthentificationexterne.colisprive.com".to_string()),
+            colis_prive_tournee_url: env::var("COLIS_PRIVE_TOURNEE_URL")
+                .unwrap_or_else(|_| "https://wstournee-v2.colisprive.com".to_string()),
+            colis_prive_detail_url: env::var("COLIS_PRIVE_DETAIL_URL")
+                .unwrap_or_else(|_| "https://wstournee-v2.colisprive.com".to_string()),
+            colis_prive_gestion_url: env::var("COLIS_PRIVE_GESTION_URL")
+                .unwrap_or_else(|_| "https://gestiontournee.colisprive.com".to_string()),
+            colis_prive_referentiel_url: env::var("COLIS_PRIVE_REFERENTIEL_URL")
+                .unwrap_or_else(|_| "https://wsreferentiel-v2.colisprive.com/WS_RefDistributeur/RefDistributeurConsolideExtranetToExterne.svc".to_string()),
         }
     }
 }

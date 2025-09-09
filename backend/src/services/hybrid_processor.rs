@@ -11,6 +11,7 @@ use crate::client::{ColisPriveWebClient, ColisDetailResponse};
 use crate::cache::{DetailCache, CacheStrategy};
 use crate::analysis::delivery_classifier::DeliveryType;
 use crate::models::package::{Package, DeliveryStatus};
+use crate::config::environment::EnvironmentConfig;
 
 /// Procesador híbrido para optimización de rutas
 pub struct HybridProcessor {
@@ -152,8 +153,12 @@ pub struct ProcessingStats {
 
 impl HybridProcessor {
     /// Crear nuevo procesador híbrido
-    pub fn new(cache_strategy: CacheStrategy) -> Result<Self> {
-        let client = ColisPriveWebClient::new()?;
+    pub fn new(cache_strategy: CacheStrategy, config: &EnvironmentConfig) -> Result<Self> {
+        let client = ColisPriveWebClient::new(
+            config.colis_prive_auth_url.clone(),
+            config.colis_prive_tournee_url.clone(),
+            config.colis_prive_detail_url.clone(),
+        )?;
         let detail_cache = DetailCache::new(crate::client::DetailCacheConfig::default());
         
         Ok(Self {
