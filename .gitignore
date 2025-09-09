@@ -120,3 +120,4 @@ android/**/captures/
 android/**/.externalNativeBuild/
 android/**/.cxx/
 
+docs/
