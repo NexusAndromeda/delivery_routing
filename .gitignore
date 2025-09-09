@@ -121,3 +121,4 @@ android/**/.externalNativeBuild/
 android/**/.cxx/
 
 docs/
+reports/
