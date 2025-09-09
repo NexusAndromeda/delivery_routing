@@ -1,0 +1,17 @@
+# Archivos sensibles y configuración local
+config.rs
+secrets.toml
+*.env
+.env*
+
+# SQLx database files (contienen datos sensibles)
+.sqlxrc
+sqlx-data.json
+*.sqlx-data.json
+.sqlx/
+
+# Archivos de configuración local
+.local/
+
+# Archivos específicos del backend que no deben versionarse
+config.toml
