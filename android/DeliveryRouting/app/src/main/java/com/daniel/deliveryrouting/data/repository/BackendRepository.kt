@@ -71,7 +71,7 @@ class BackendRepository(private val context: Context) {
             val response = api.login(request)
 
             if (response.isSuccessful && response.body() != null) {
-                Log.d(TAG, "🎉 Login exitoso: ${response.body()?.message}")
+                Log.d(TAG, "🎉 Login exitoso: ${response.body()?.success}")
                 Result.success(response.body()!!)
             } else {
                 val errorBody = response.errorBody()?.string() ?: "Error desconocido"
@@ -86,6 +86,7 @@ class BackendRepository(private val context: Context) {
 
     suspend fun getPackages(
         matricule: String,
+        societe: String,
         date: String? = null
     ): Result<GetPackagesResponse> = withContext(Dispatchers.IO) {
         try {
@@ -93,6 +94,7 @@ class BackendRepository(private val context: Context) {
             
             val request = GetPackagesRequest(
                 matricule = matricule,
+                societe = societe,
                 date = date
             )
 

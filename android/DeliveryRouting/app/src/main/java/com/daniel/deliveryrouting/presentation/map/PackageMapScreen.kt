@@ -7,29 +7,32 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.daniel.deliveryrouting.presentation.components.ViewToggle
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PackageMapScreen(
     onNavigateBack: () -> Unit
 ) {
-    
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Mapa de Paquetes") },
-                navigationIcon = {
-                    TextButton(onClick = onNavigateBack) {
-                        Text("← Volver")
-                    }
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        // Toggle en esquina superior izquierda
+        ViewToggle(
+            isMapView = true, // true porque estamos en el mapa
+            onToggle = { isMap ->
+                if (!isMap) { // Si se presiona lista, volver
+                    onNavigateBack()
                 }
-            )
-        }
-    ) { paddingValues ->
+            },
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(16.dp)
+        )
+        
+        // Contenido del mapa
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
@@ -41,17 +44,17 @@ fun PackageMapScreen(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            Text(
+                    Text(
                 text = "Funcionalidad en desarrollo",
-                style = MaterialTheme.typography.bodyLarge
-            )
+                        style = MaterialTheme.typography.bodyLarge
+                    )
             
             Spacer(modifier = Modifier.height(8.dp))
             
-            Text(
+                    Text(
                 text = "Aquí se mostrará el mapa con los paquetes",
-                style = MaterialTheme.typography.bodyMedium
-            )
+                        style = MaterialTheme.typography.bodyMedium
+                    )
         }
     }
 }

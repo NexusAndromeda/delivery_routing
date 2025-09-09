@@ -6,13 +6,17 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.daniel.deliveryrouting.data.api.models.PackageData
+import com.daniel.deliveryrouting.presentation.components.StatusIcon
+import com.daniel.deliveryrouting.presentation.components.StatusText
 import android.util.Log
 
 private const val TAG_PACKAGES = "PackagesScreen"
@@ -26,38 +30,37 @@ fun PackagesScreen(
     onMapClick: () -> Unit = {}
 ) {
     Log.d(TAG_PACKAGES, "📦 PackagesScreen iniciado con ${packages.size} paquetes, isLoading: $isLoading")
+    
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
+        modifier = Modifier.fillMaxSize()
     ) {
-        // Header con botón de sincronizar
+        // Header compacto
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "Paquetes de Entrega",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Home,
+                contentDescription = "Paquetes",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp)
             )
+            Text(
+                text = packages.size.toString(),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
             
             Row {
-                // 🗺️ Botón del mapa
-                IconButton(
-                    onClick = {
-                        Log.d(TAG_PACKAGES, "🗺️ Botón de mapa presionado - paquetes: ${packages.size}")
-                        onMapClick()
-                    },
-                    enabled = packages.isNotEmpty()
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.LocationOn,
-                        contentDescription = "Ver Mapa"
-                    )
-                }
-                
                 // Botón de sincronizar
                 IconButton(
                     onClick = {
@@ -84,14 +87,12 @@ fun PackagesScreen(
                     Log.d(TAG_PACKAGES, "🚪 Botón de logout presionado")
                     onLogout()
                 }) {
-                    Text("Cerrar Sesión")
+                    Text("Salir")
                 }
             }
         }
         
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        // Lista de paquetes
+        // Lista de paquetes - usa todo el espacio disponible
         if (packages.isEmpty() && !isLoading) {
             // Estado vacío
             Box(
@@ -116,7 +117,9 @@ fun PackagesScreen(
             }
         } else {
             LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 items(packages) { packageItem ->
                     PackageCard(packageItem = packageItem)
@@ -130,49 +133,62 @@ fun PackagesScreen(
 fun PackageCard(packageItem: PackageData) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(12.dp)
         ) {
+            // Header con tracking number y estado
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = packageItem.trackingNumber,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
                 )
-                Text(
-                    text = packageItem.status,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = when (packageItem.status) {
-                        "Pendiente" -> MaterialTheme.colorScheme.primary
-                        "Entregado" -> MaterialTheme.colorScheme.tertiary
-                        "Fallido" -> MaterialTheme.colorScheme.error
-                        else -> MaterialTheme.colorScheme.onSurface
-                    }
-                )
+                
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    StatusIcon(status = packageItem.status)
+                    StatusText(status = packageItem.status)
+                }
             }
             
             Spacer(modifier = Modifier.height(8.dp))
             
+            // Información del destinatario
             Text(
-                text = "Destinatario: ${packageItem.recipientName}",
-                style = MaterialTheme.typography.bodyMedium
+                text = packageItem.recipientName,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium
             )
             
+            Spacer(modifier = Modifier.height(4.dp))
+            
+            // Dirección (más compacta)
             Text(
-                text = "Dirección: ${packageItem.address}",
-                style = MaterialTheme.typography.bodyMedium
+                text = packageItem.address,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
             )
             
+            // Instrucciones si existen
             if (packageItem.instructions.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Instrucciones: ${packageItem.instructions}",
+                    text = packageItem.instructions,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }

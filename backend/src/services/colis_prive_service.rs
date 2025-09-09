@@ -35,6 +35,7 @@ pub struct GetTourneeRequest {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GetPackagesRequest {
     pub matricule: String,
+    pub societe: String, // Sociedad para construir el matricule completo
     pub date: Option<String>, // Campo opcional para fecha
 }
 

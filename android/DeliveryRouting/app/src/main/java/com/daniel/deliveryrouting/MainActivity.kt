@@ -10,21 +10,24 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.platform.LocalContext
 import com.daniel.deliveryrouting.data.repository.BackendRepository
 import com.daniel.deliveryrouting.data.api.models.AuthData
 import com.daniel.deliveryrouting.data.api.models.LoginResponse
+import com.daniel.deliveryrouting.data.api.models.LoginSuccessData
 import com.daniel.deliveryrouting.data.api.models.PackageData
 import com.daniel.deliveryrouting.data.api.models.SelectedCompany
 import com.daniel.deliveryrouting.data.cache.CompanyCache
+import com.daniel.deliveryrouting.data.cache.LoginCache
 import com.daniel.deliveryrouting.presentation.packages.PackagesScreen
 import com.daniel.deliveryrouting.presentation.map.PackageMapScreen
 import com.daniel.deliveryrouting.presentation.company.CompanySelectionScreen
 import com.daniel.deliveryrouting.presentation.company.CompanySelectionViewModel
+import com.daniel.deliveryrouting.presentation.components.ViewToggle
 import com.daniel.deliveryrouting.ui.theme.DeliveryRoutingTheme
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -49,7 +52,10 @@ class MainActivity : ComponentActivity() {
         
         Log.d(TAG, "🎨 Configurando UI con Compose...")
         setContent {
-            DeliveryRoutingTheme {
+            DeliveryRoutingTheme(
+                darkTheme = true // 🌙 FORZAR MODO OSCURO
+            ) {
+                Log.d(TAG, "🌙 Modo oscuro activado - Background: ${MaterialTheme.colorScheme.background}")
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -61,21 +67,24 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-data class LoginSuccessData(
-    val username: String,
-    val matricule: String,
-    val token: String
-)
 
 @Composable
 fun LoginApp() {
-    var isLoggedIn by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val loginCache = remember { LoginCache(context) }
+    
+    // 🔍 VERIFICAR SI EL LOGIN ESTÁ EXPIRADO
+    val isLoginExpired = loginCache.isLoginExpired(24) // 24 horas
+    val cachedLoginData = if (isLoginExpired) null else loginCache.getLoginData()
+    
+    // 🚨 TEMPORAL: Forzar pantalla de login para debug
+    var isLoggedIn by remember { mutableStateOf(false) } // Siempre false para debug
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var societe by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
-    var loginData by remember { mutableStateOf<LoginSuccessData?>(null) }
+    var loginData by remember { mutableStateOf<LoginSuccessData?>(cachedLoginData) }
     
     // Estados para la pantalla de paquetes
     var packages by remember { mutableStateOf<List<PackageData>>(emptyList()) }
@@ -90,7 +99,6 @@ fun LoginApp() {
     var selectedCompany by remember { mutableStateOf<SelectedCompany?>(null) }
     var companies by remember { mutableStateOf<List<com.daniel.deliveryrouting.data.api.models.Company>>(emptyList()) }
 
-    val context = LocalContext.current
     val repository = remember { BackendRepository(context) }
     val companyCache = remember { CompanyCache(context) }
     val scope = rememberCoroutineScope()
@@ -141,7 +149,10 @@ fun LoginApp() {
             packagesError = ""
             
             try {
-                val result = repository.getPackages(loginData?.matricule ?: "")
+                val result = repository.getPackages(
+                    matricule = loginData?.matricule ?: "",
+                    societe = selectedCompany?.code ?: ""
+                )
                 
                 result.fold(
                     onSuccess = { response ->
@@ -164,21 +175,30 @@ fun LoginApp() {
     }
 
     if (isLoggedIn && loginData != null) {
-        if (showMap) {
-            // 🗺️ PANTALLA DE MAPA
-            Log.d(TAG_MAIN, "🗺️ Mostrando pantalla de mapa con ${packages.size} paquetes")
-            PackageMapScreen(
-                onNavigateBack = { 
-                    Log.d(TAG_MAIN, "⬅️ Regresando a pantalla de paquetes")
-                    showMap = false 
-                }
+        // 🎛️ TOGGLE DE VISTA en la esquina superior izquierda
+        Box(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // Toggle en esquina superior izquierda
+            ViewToggle(
+                isMapView = !showMap, // showMap = false significa mapa (vista principal)
+                onToggle = { isMap ->
+                    showMap = !isMap // Invertir lógica: isMap = true significa mostrar mapa
+                    Log.d(TAG_MAIN, "🔄 Cambiando vista: ${if (isMap) "Mapa" else "Lista"}")
+                },
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(16.dp)
             )
-        } else {
-            // ✅ PANTALLA DE PAQUETES
-            PackagesScreen(
-                packages = packages,
-                isLoading = isLoadingPackages,
-                onRefresh = loadPackages,
+            
+            // Contenido principal
+            if (showMap) {
+                // 📦 PANTALLA DE PAQUETES (vista secundaria)
+                Log.d(TAG_MAIN, "📦 Mostrando pantalla de paquetes con ${packages.size} paquetes")
+                PackagesScreen(
+                    packages = packages,
+                    isLoading = isLoadingPackages,
+                    onRefresh = loadPackages,
                 onLogout = {
                     isLoggedIn = false
                     loginData = null
@@ -186,12 +206,26 @@ fun LoginApp() {
                     errorMessage = ""
                     packagesError = ""
                     showMap = false
+                    
+                    // 🗑️ LIMPIAR CACHE AL HACER LOGOUT
+                    loginCache.clearLoginData()
+                    Log.d(TAG_MAIN, "🗑️ Cache de login limpiado")
                 },
-                onMapClick = { 
-                    Log.d(TAG_MAIN, "🗺️ Navegando a pantalla de mapa")
-                    showMap = true 
-                }
-            )
+                    onMapClick = { 
+                        Log.d(TAG_MAIN, "🗺️ Navegando a pantalla de mapa")
+                        showMap = false // Cambiar a false para ir al mapa
+                    }
+                )
+            } else {
+                // 🗺️ PANTALLA DE MAPA (vista principal)
+                Log.d(TAG_MAIN, "🗺️ Mostrando pantalla de mapa con ${packages.size} paquetes")
+                PackageMapScreen(
+                    onNavigateBack = { 
+                        Log.d(TAG_MAIN, "⬅️ Regresando a pantalla de paquetes")
+                        showMap = true // Cambiar a true para ir a paquetes
+                    }
+                )
+            }
         }
         
         // Cargar paquetes automáticamente al entrar
@@ -242,6 +276,10 @@ fun LoginApp() {
                                     val token = loginResponse.authentication?.token ?: ""
                                     loginData = LoginSuccessData(fullUsername, matricule, token)
                                     isLoggedIn = true
+                                    
+                                    // 💾 GUARDAR EN CACHE PARA PERSISTENCIA
+                                    loginCache.saveLoginData(loginData!!, selectedCompany)
+                                    Log.d(TAG_MAIN, "💾 Datos de login guardados en cache")
                                 } else {
                                     errorMessage = loginResponse.error?.message ?: "Error en el login"
                                 }

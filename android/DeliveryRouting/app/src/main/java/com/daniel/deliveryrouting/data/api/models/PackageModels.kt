@@ -5,6 +5,7 @@ import com.google.gson.annotations.SerializedName
 // Modelo para obtener paquetes del backend
 data class GetPackagesRequest(
     @SerializedName("matricule") val matricule: String,
+    @SerializedName("societe") val societe: String, // Sociedad para construir el matricule completo
     @SerializedName("date") val date: String? = null // Opcional, si no se envía usa fecha actual
 )
 

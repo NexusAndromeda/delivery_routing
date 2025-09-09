@@ -81,7 +81,8 @@ impl AddressValidator {
         let number_regex = Regex::new(r"(.+?)\s+(\d+)\s*$").unwrap();
         
         // 🆕 REGEX para detectar números duplicados (ej: "35 35 RUE")
-        let duplicate_number_regex = Regex::new(r"(\d+)\s+\1\s+").unwrap();
+        // Nota: Rust no soporta backreferences, usamos una aproximación diferente
+        let duplicate_number_regex = Regex::new(r"(\d+)\s+\d+\s+").unwrap();
         
         // 🆕 REGEX para detectar distrito en medio (ej: "18EME ARRONDISSEMENT")
         let district_in_middle_regex = Regex::new(r"(?i)(\d+EME\s+ARRONDISSEMENT)").unwrap();
