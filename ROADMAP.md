@@ -283,6 +283,21 @@ class PackageDetailScreen {
 
 ---
 
-*Última actualización: 2025-09-01*
+## 🚀 **IMPLEMENTACIONES RECIENTES**
+
+### ✅ Manejo de Tournée Terminada (2025-09-10)
+- **Backend**: Detecta cuando la API devuelve listas vacías y responde con mensaje de tournée completada
+- **Mensaje**: "🏁 Tournée completada - [Chofer] ha terminado su jornada. No hay paquetes pendientes."
+- **Respuesta consistente**: Siempre devuelve lista de paquetes (vacía cuando no hay paquetes)
+- **Android**: ✅ Detecta respuesta vacía y muestra mensaje apropiado con icono y colores
+
+### ✅ Sistema de Estados de Entrega (Revertido)
+- **Razón**: Sistema demasiado complejo para el caso de uso actual
+- **Decisión**: Enfoque en funcionalidades más simples y prácticas
+- **Próximo**: Implementar manejo básico de estados en la UI
+
+---
+
+*Última actualización: 2025-09-10*
 *Próxima revisión: 2025-09-15*
 *Estado: Fase 1 ✅ Completada | Fase 2 🚧 En desarrollo*

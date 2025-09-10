@@ -90,6 +90,7 @@ fun LoginApp() {
     var packages by remember { mutableStateOf<List<PackageData>>(emptyList()) }
     var isLoadingPackages by remember { mutableStateOf(false) }
     var packagesError by remember { mutableStateOf("") }
+    var packagesMessage by remember { mutableStateOf<String?>(null) }
     
     // Estado para navegación al mapa
     var showMap by remember { mutableStateOf(false) }
@@ -158,12 +159,16 @@ fun LoginApp() {
                     onSuccess = { response ->
                         if (response.success) {
                             packages = response.packages ?: emptyList()
+                            packagesMessage = response.message // Capturar mensaje del backend
+                            Log.d(TAG_MAIN, "📦 Paquetes cargados: ${packages.size}, mensaje: ${packagesMessage}")
                         } else {
                             packagesError = response.error?.message ?: "Error obteniendo paquetes"
+                            packagesMessage = null
                         }
                     },
                     onFailure = { error ->
                         packagesError = "Error de conexión: ${error.message}"
+                        packagesMessage = null
                     }
                 )
             } catch (e: Exception) {
@@ -199,22 +204,24 @@ fun LoginApp() {
                     packages = packages,
                     isLoading = isLoadingPackages,
                     onRefresh = loadPackages,
-                onLogout = {
-                    isLoggedIn = false
-                    loginData = null
-                    packages = emptyList()
-                    errorMessage = ""
-                    packagesError = ""
-                    showMap = false
-                    
-                    // 🗑️ LIMPIAR CACHE AL HACER LOGOUT
-                    loginCache.clearLoginData()
-                    Log.d(TAG_MAIN, "🗑️ Cache de login limpiado")
-                },
+                    onLogout = {
+                        isLoggedIn = false
+                        loginData = null
+                        packages = emptyList()
+                        errorMessage = ""
+                        packagesError = ""
+                        packagesMessage = null
+                        showMap = false
+                        
+                        // 🗑️ LIMPIAR CACHE AL HACER LOGOUT
+                        loginCache.clearLoginData()
+                        Log.d(TAG_MAIN, "🗑️ Cache de login limpiado")
+                    },
                     onMapClick = { 
                         Log.d(TAG_MAIN, "🗺️ Navegando a pantalla de mapa")
                         showMap = false // Cambiar a false para ir al mapa
-                    }
+                    },
+                    message = packagesMessage
                 )
             } else {
                 // 🗺️ PANTALLA DE MAPA (vista principal)

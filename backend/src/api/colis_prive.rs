@@ -255,8 +255,7 @@ pub async fn get_packages(
     info!("📦 Obteniendo paquetes para matricule: {}", request.matricule);
 
     // Construir el matricule completo (societe + username)
-    let societe = std::env::var("COLIS_PRIVE_SOCIETE")
-        .expect("COLIS_PRIVE_SOCIETE must be set in environment variables");
+    let societe = &request.societe;
     let matricule_completo = format!("{}_{}", societe, request.matricule);
     
     // Construir la fecha (hoy si no se especifica)
@@ -268,7 +267,7 @@ pub async fn get_packages(
 
     // 🆕 OBTENER EL TOKEN DINÁMICAMENTE DEL ESTADO DE LA APLICACIÓN
     // request.matricule es el username, no el matricule completo
-    let sso_hopps = match state.get_auth_token(&request.matricule, &societe).await {
+    let sso_hopps = match state.get_auth_token(&request.matricule, societe).await {
         Some(auth_token) => {
             if auth_token.is_expired() {
                 log::warn!("⚠️ Token expirado para {}:{}, necesitamos re-autenticar", societe, request.matricule);
@@ -281,7 +280,7 @@ pub async fn get_packages(
             log::warn!("⚠️ No hay token almacenado para {}:{}, intentando autenticación automática", societe, request.matricule);
             
             // 🆕 INTENTAR AUTENTICACIÓN AUTOMÁTICA
-            match attempt_auto_auth(&state, &request.matricule, &societe).await {
+            match attempt_auto_auth(&state, &request.matricule, societe).await {
                 Ok(token) => {
                     log::info!("✅ Autenticación automática exitosa para {}:{}", societe, request.matricule);
                     token
@@ -356,6 +355,7 @@ pub async fn get_packages(
 
     let response_str = String::from_utf8_lossy(&curl_output.stdout);
     log::info!("📥 Respuesta recibida: {} bytes", response_str.len());
+    log::info!("📥 Respuesta completa: {}", response_str);
 
     // Parsear la respuesta JSON de Colis Privé
     let tournee_data: serde_json::Value = serde_json::from_str(&response_str)
@@ -364,14 +364,28 @@ pub async fn get_packages(
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
+    // 🔍 DEBUG: Mostrar estructura de la respuesta
+    log::info!("🔍 Estructura de respuesta de Colis Privé:");
+    if let Some(obj) = tournee_data.as_object() {
+        for (key, value) in obj {
+            log::info!("  - {}: {}", key, value);
+        }
+    } else {
+        log::info!("  - Respuesta no es un objeto JSON");
+    }
+
     // Extraer paquetes de LstLieuArticle
     let packages = if let Some(lst_lieu_article) = tournee_data.get("LstLieuArticle") {
         if let Some(packages_array) = lst_lieu_article.as_array() {
             packages_array
                 .iter()
                 .filter_map(|package| {
-                    // Solo procesar paquetes de tipo COLIS
-                    if package.get("metier")?.as_str() == Some("COLIS") {
+                    // 🔍 TEST: Mostrar TODOS los tipos de paquetes para comparar
+                    let metier = package.get("metier")?.as_str().unwrap_or("UNKNOWN");
+                    log::info!("📦 Paquete encontrado - Tipo: {}, ID: {}", metier, package.get("idArticle")?.as_str().unwrap_or("N/A"));
+                    
+                    // Procesar TODOS los tipos de paquetes (no solo COLIS)
+                    if true { // Cambiado de filtro específico a mostrar todos
                         Some(PackageData {
                             id: package.get("idArticle")?.as_str()?.to_string(),
                             tracking_number: package.get("refExterneArticle")?.as_str()?.to_string(),
@@ -413,12 +427,44 @@ pub async fn get_packages(
             let code_tournee = infos_tournee.get("codeTourneeDistribution")
                 .and_then(|v| v.as_str())
                 .unwrap_or("Desconocida");
+            let nom_distributeur = infos_tournee.get("nomDistributeur")
+                .and_then(|v| v.as_str())
+                .unwrap_or("Chofer");
+            
+            log::info!("🏁 Tournée completada: {} - Chofer: {}", code_tournee, nom_distributeur);
+            
             return Ok(Json(GetPackagesResponse {
                 success: true,
-                message: format!("Tournée {} completada - No hay paquetes pendientes", code_tournee),
-                packages: None,
+                message: format!("🏁 Tournée completada - {} ha terminado su jornada. No hay paquetes pendientes.", nom_distributeur),
+                packages: Some(vec![]), // Lista vacía en lugar de None
                 error: None,
-                address_validation: None,
+                address_validation: Some(crate::services::AddressValidationSummary {
+                    total_packages: 0,
+                    auto_validated: 0,
+                    cleaned_auto: 0,
+                    completed_auto: 0,
+                    partial_found: 0,
+                    requires_manual: 0,
+                    warnings: vec![],
+                }),
+            }));
+        } else {
+            // No hay información de tournée, podría ser un error
+            log::warn!("⚠️ No se encontraron paquetes ni información de tournée");
+            return Ok(Json(GetPackagesResponse {
+                success: true,
+                message: "No se encontraron paquetes para esta fecha".to_string(),
+                packages: Some(vec![]),
+                error: None,
+                address_validation: Some(crate::services::AddressValidationSummary {
+                    total_packages: 0,
+                    auto_validated: 0,
+                    cleaned_auto: 0,
+                    completed_auto: 0,
+                    partial_found: 0,
+                    requires_manual: 0,
+                    warnings: vec![],
+                }),
             }));
         }
     }

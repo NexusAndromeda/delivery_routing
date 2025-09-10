@@ -27,7 +27,8 @@ fun PackagesScreen(
     isLoading: Boolean,
     onRefresh: () -> Unit,
     onLogout: () -> Unit,
-    onMapClick: () -> Unit = {}
+    onMapClick: () -> Unit = {},
+    message: String? = null
 ) {
     Log.d(TAG_PACKAGES, "📦 PackagesScreen iniciado con ${packages.size} paquetes, isLoading: $isLoading")
     
@@ -94,24 +95,50 @@ fun PackagesScreen(
         
         // Lista de paquetes - usa todo el espacio disponible
         if (packages.isEmpty() && !isLoading) {
-            // Estado vacío
+            // Estado vacío - mostrar mensaje del backend si existe
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(16.dp)
                 ) {
-                    Text(
-                        text = "No hay paquetes disponibles",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    // Icono de estado
+                    Icon(
+                        imageVector = Icons.Filled.Home,
+                        contentDescription = "Estado",
+                        modifier = Modifier.size(64.dp),
+                        tint = if (message?.contains("completada") == true) 
+                            MaterialTheme.colorScheme.primary 
+                        else 
+                            MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Mensaje principal
                     Text(
-                        text = "Usa el botón de sincronizar para actualizar",
+                        text = message ?: "No hay paquetes disponibles",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = if (message?.contains("completada") == true) 
+                            MaterialTheme.colorScheme.primary 
+                        else 
+                            MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    // Mensaje secundario
+                    Text(
+                        text = if (message?.contains("completada") == true) 
+                            "La jornada de trabajo ha terminado" 
+                        else 
+                            "Usa el botón de sincronizar para actualizar",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
                 }
             }
