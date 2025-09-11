@@ -256,7 +256,7 @@ pub async fn get_packages(
 
     // Construir el matricule completo (societe + username)
     let societe = &request.societe;
-    let matricule_completo = format!("{}_{}", societe, request.matricule);
+    let matricule_completo = format!("{}_{}", societe, request.matricule.trim());
     
     // Construir la fecha (hoy si no se especifica)
     let date = request.date.unwrap_or_else(|| {
@@ -380,12 +380,12 @@ pub async fn get_packages(
             packages_array
                 .iter()
                 .filter_map(|package| {
-                    // 🔍 TEST: Mostrar TODOS los tipos de paquetes para comparar
+                    // 🔍 FILTRAR SOLO PAQUETES DE TIPO "COLIS"
                     let metier = package.get("metier")?.as_str().unwrap_or("UNKNOWN");
                     log::info!("📦 Paquete encontrado - Tipo: {}, ID: {}", metier, package.get("idArticle")?.as_str().unwrap_or("N/A"));
                     
-                    // Procesar TODOS los tipos de paquetes (no solo COLIS)
-                    if true { // Cambiado de filtro específico a mostrar todos
+                    // Procesar solo paquetes de tipo "COLIS"
+                    if metier == "COLIS" {
                         Some(PackageData {
                             id: package.get("idArticle")?.as_str()?.to_string(),
                             tracking_number: package.get("refExterneArticle")?.as_str()?.to_string(),
@@ -396,10 +396,22 @@ pub async fn get_packages(
                                 package.get("codePostalOrigineDestinataire")?.as_str()?,
                                 package.get("LibelleLocaliteOrigineDestinataire")?.as_str()?
                             ),
-                            status: package.get("codeStatutArticle")?.as_str()?.to_string(),
-                            instructions: package.get("PreferenceLivraison")?.as_str()?.to_string(),
-                            phone: package.get("telephoneMobileDestinataire")?.as_str()?.to_string(),
-                            priority: package.get("priorite")?.as_u64()?.to_string(),
+                            status: package.get("codeStatutArticle")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("UNKNOWN")
+                                .to_string(),
+                            instructions: package.get("PreferenceLivraison")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("")
+                                .to_string(),
+                            phone: package.get("telephoneMobileDestinataire")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("")
+                                .to_string(),
+                            priority: package.get("priorite")
+                                .and_then(|v| v.as_u64())
+                                .unwrap_or(0)
+                                .to_string(),
                             latitude: None,
                             longitude: None,
                             formatted_address: None,
@@ -420,6 +432,20 @@ pub async fn get_packages(
     };
 
     log::info!("📦 Paquetes extraídos: {} paquetes", packages.len());
+    
+    // 🔍 DEBUG: Verificar si hay paquetes en LstLieuArticle
+    if let Some(lst_lieu_article) = tournee_data.get("LstLieuArticle") {
+        log::info!("🔍 LstLieuArticle encontrado: {} elementos", 
+            lst_lieu_article.as_array().map(|arr| arr.len()).unwrap_or(0));
+        
+        if let Some(arr) = lst_lieu_article.as_array() {
+            for (i, item) in arr.iter().enumerate() {
+                log::info!("  📦 Paquete {}: {:?}", i, item);
+            }
+        }
+    } else {
+        log::warn!("⚠️ LstLieuArticle no encontrado en la respuesta");
+    }
 
     // Si no hay paquetes, verificar si es una tournée completada
     if packages.is_empty() {
