@@ -85,6 +85,11 @@ android/**/app/build/
 android/**/app/*.apk
 android/**/app/*.aab
 
+# Mapbox local configuration (contains personal tokens)
+android/**/res/values/mapbox_local.xml
+android/**/res/values/mapbox_build.xml
+android/**/res/values/mapbox_access_token.xml
+
 # Reverse engineering artifacts (muy pesados)
 android/**/colis_prive_decompiled/
 android/**/colis_prive_apktool/
